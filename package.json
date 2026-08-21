@@ -11,6 +11,8 @@
     "backend": "pnpm --filter @utharness/backend dev",
     "cli": "pnpm --filter @utharness/cli start",
     "tui": "pnpm --filter @utharness/tui start",
+    "web": "pnpm --filter @utharness/web dev",
+    "desktop": "pnpm --filter @utharness/desktop start",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

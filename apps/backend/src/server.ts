@@ -40,7 +40,8 @@ export async function buildApp(options: { dbFile?: string; logger?: boolean } = 
   const terminal = new TerminalManager(db, bus, permissions);
   const nodePtyAvailable = await import("node-pty").then(() => true).catch(() => false);
 
-  await app.register(cors, { origin: false });
+  const allowedFrontendOrigins = new Set(["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:4173", "http://localhost:4173", "null"]);
+  await app.register(cors, { origin: (origin, callback) => callback(null, !origin || allowedFrontendOrigins.has(origin)), methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"], allowedHeaders: ["content-type", "x-utharness-actor"] });
   await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
   app.addHook("onRequest", async (request, reply) => { reply.header("x-content-type-options", "nosniff"); reply.header("cache-control", "no-store"); if (request.ip !== "127.0.0.1" && request.ip !== "::1" && process.env.UTHARNESS_ALLOW_REMOTE !== "1") return reply.code(403).send({ error: "Localhost-only server" }); });
 

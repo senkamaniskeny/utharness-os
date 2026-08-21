@@ -4,9 +4,16 @@ packages:
   - integrations/*
 allowBuilds:
   better-sqlite3: true
+  electron: true
   esbuild: true
   node-pty: true
+auditConfig:
+  ignoreGhsas:
+    - GHSA-jmr9-qjv8-65gv
 onlyBuiltDependencies:
   - better-sqlite3
+  - electron
   - esbuild
   - node-pty
+patchedDependencies:
+  extract-zip@2.0.1: patches/extract-zip@2.0.1.patch
