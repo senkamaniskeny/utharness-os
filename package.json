@@ -1,0 +1,31 @@
+{
+  "name": "utharness-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first multi-agent operating environment",
+  "license": "MIT",
+  "packageManager": "pnpm@11.21.0",
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "dev": "pnpm --filter @utharness/backend dev",
+    "backend": "pnpm --filter @utharness/backend dev",
+    "cli": "pnpm --filter @utharness/cli start",
+    "tui": "pnpm --filter @utharness/tui start",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "package": "pnpm -r pack",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript-eslint": "^8.18.0",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
+

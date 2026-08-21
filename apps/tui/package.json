@@ -1,0 +1,8 @@
+{
+  "name": "@utharness/tui",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": { "start": "tsx src/index.ts", "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "test": "vitest run --passWithNoTests", "lint": "eslint src --max-warnings=0", "pack": "pnpm pack" },
+  "devDependencies": { "@types/node": "^22.10.0", "tsx": "^4.19.2", "typescript": "^5.7.2", "vitest": "^2.1.8", "eslint": "^9.17.0" }
+}
