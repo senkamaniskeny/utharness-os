@@ -18,6 +18,7 @@
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
     "package": "pnpm -r pack",
+    "e2e:live": "node scripts/e2e-live-simulation.mjs",
     "format": "prettier --write ."
   },
   "devDependencies": {
