@@ -7,7 +7,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ secrets.NPM_TOKEN != '' }}
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,6 +22,8 @@ jobs:
       - run: pnpm --filter @utharness/cli build
       - run: pnpm --filter @utharness/tui build
       - run: pnpm --filter @utharness/cli publish --access public --no-git-checks
-        env: { NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} }
+        if: ${{ env.NPM_TOKEN != '' }}
+        env: { NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }} }
       - run: pnpm --filter @utharness/tui publish --access public --no-git-checks
-        env: { NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} }
+        if: ${{ env.NPM_TOKEN != '' }}
+        env: { NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }} }
