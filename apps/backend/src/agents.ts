@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { agentToolCatalog } from "./agent-tools.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -36,6 +37,7 @@ export interface AgentAdapter {
   readonly id: string;
   readonly name: string;
   readonly executable: string;
+  readonly metadata: Record<string, unknown>;
   detect(): Promise<AgentDetectionResult>;
   getVersion(): Promise<string>;
   getCapabilities(): Promise<string[]>;
@@ -53,6 +55,7 @@ export abstract class CliAgentAdapter implements AgentAdapter {
   abstract readonly name: string;
   abstract readonly executable: string;
   abstract readonly capabilities: string[];
+  readonly metadata: Record<string, unknown> = {};
 
   async detect(): Promise<AgentDetectionResult> {
     try {
@@ -60,7 +63,7 @@ export abstract class CliAgentAdapter implements AgentAdapter {
       return { detected: true, executable: this.executable, version: await this.getVersion(), source: "configured-path" };
     } catch {
       try {
-        const { stdout } = await execFileAsync("sh", ["-lc", `command -v ${this.executable}`]);
+        const { stdout } = await execFileAsync("sh", ["-lc", `command -v -- ${this.executable}`]);
         const executable = stdout.trim();
         if (!executable) return { detected: false, source: "PATH" };
         return { detected: true, executable, version: await this.getVersion(), source: "PATH" };
@@ -91,20 +94,11 @@ export class GenericCliAdapter extends CliAgentAdapter {
   readonly id: string;
   readonly name: string;
   readonly executable: string;
-  readonly capabilities = ["shell", "streaming-output", "stdin"];
-  constructor(id: string, name: string, executable: string) { super(); this.id = id; this.name = name; this.executable = executable; }
+  readonly capabilities: string[];
+  readonly metadata: Record<string, unknown>;
+  constructor(id: string, name: string, executable: string, capabilities = ["shell", "streaming-output", "stdin"], metadata: Record<string, unknown> = {}) { super(); this.id = id; this.name = name; this.executable = executable; this.capabilities = capabilities; this.metadata = metadata; }
 }
 
-export const builtinAdapters: CliAgentAdapter[] = [
-  new GenericCliAdapter("claude-code", "Claude Code", "claude"),
-  new GenericCliAdapter("codex", "Codex CLI", "codex"),
-  new GenericCliAdapter("hermes", "Hermes", "hermes"),
-  new GenericCliAdapter("aider", "Aider", "aider"),
-  new GenericCliAdapter("gemini", "Gemini CLI", "gemini"),
-  new GenericCliAdapter("qwen", "Qwen Code", "qwen"),
-  new GenericCliAdapter("goose", "Goose", "goose"),
-  new GenericCliAdapter("opencode", "OpenCode", "opencode"),
-  new GenericCliAdapter("openhands", "OpenHands", "openhands"),
-  new GenericCliAdapter("open-interpreter", "Open Interpreter", "interpreter"),
-  new GenericCliAdapter("generic-cli", "Generic CLI Agent", "")
-];
+export const builtinAdapters: CliAgentAdapter[] = agentToolCatalog
+  .filter((tool) => tool.mode === "cli" && Boolean(tool.executable))
+  .map((tool) => new GenericCliAdapter(tool.id, tool.name, tool.executable!, [...tool.capabilities, "streaming-output", "stdin"], { officialUrl: tool.officialUrl, docsUrl: tool.docsUrl, repositoryUrl: tool.repositoryUrl, iconSlug: tool.iconSlug, publisher: tool.publisher }));

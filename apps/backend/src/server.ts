@@ -9,6 +9,8 @@ import { AppDatabase, type ResourceTable } from "./database.js";
 import { AgentRegistry, EventBus, PermissionEngine, SessionManager, TaskEngine } from "./runtime.js";
 import { Orchestrator, TeamService, WorkflowService } from "./orchestration.js";
 import { TerminalManager } from "./terminal.js";
+import { agentToolCatalog, getAgentTool } from "./agent-tools.js";
+import { AgentInstaller } from "./agent-installer.js";
 
 const idSchema = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const createSessionSchema = z.object({ agentId: idSchema, cwd: z.string().min(1).max(4096), model: z.string().max(256).optional(), env: z.record(z.string()).optional(), permissions: z.record(z.boolean()).optional() });
@@ -24,7 +26,7 @@ function bodyOf(request: FastifyRequest): unknown { return request.body ?? {}; }
 function actorOf(request: FastifyRequest): string { return String(request.headers["x-utharness-actor"] ?? "local-user"); }
 function toJson(value: unknown): string { return JSON.stringify(value ?? {}); }
 
-export interface AppContext { app: FastifyInstance; db: AppDatabase; bus: EventBus; registry: AgentRegistry; sessions: SessionManager; tasks: TaskEngine; teams: TeamService; orchestrator: Orchestrator; workflows: WorkflowService; terminal: TerminalManager; }
+export interface AppContext { app: FastifyInstance; db: AppDatabase; bus: EventBus; registry: AgentRegistry; sessions: SessionManager; tasks: TaskEngine; teams: TeamService; orchestrator: Orchestrator; workflows: WorkflowService; terminal: TerminalManager; installer: AgentInstaller; }
 
 export async function buildApp(options: { dbFile?: string; logger?: boolean } = {}): Promise<AppContext> {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 1024 * 1024 });
@@ -38,6 +40,7 @@ export async function buildApp(options: { dbFile?: string; logger?: boolean } = 
   const orchestrator = new Orchestrator(db, tasks, bus);
   const workflows = new WorkflowService(db, tasks, bus);
   const terminal = new TerminalManager(db, bus, permissions);
+  const installer = new AgentInstaller(db, bus);
   const nodePtyAvailable = await import("node-pty").then(() => true).catch(() => false);
 
   const allowedFrontendOrigins = /^(https?:\/\/)(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/;
@@ -53,6 +56,21 @@ export async function buildApp(options: { dbFile?: string; logger?: boolean } = 
   app.get("/api/system", async () => ({ name: "UTHARNESS OS", version: "0.1.0", platform: process.platform, arch: process.arch, node: process.version, pid: process.pid, db: process.env.UTHARNESS_DB ?? "./data/utharness.sqlite" }));
 
   app.get("/api/agents", async () => ({ agents: db.raw.prepare("SELECT * FROM agents ORDER BY name").all() }));
+  app.get("/api/agent-tools", async (request) => {
+    const query = request.query as { mode?: string; q?: string };
+    const selected = db.raw.prepare("SELECT value FROM settings WHERE key='selected_agent_tool'").get() as { value?: string } | undefined;
+    const installed = new Map((db.raw.prepare("SELECT id,status,executable,version FROM agents").all() as Array<{ id: string; status: string; executable: string; version: string | null }>).map((row) => [row.id, row]));
+    const jobs = new Map((installer.list(200).map((job) => [job.tool_id, job])));
+    const normalized = String(query.q ?? "").trim().toLowerCase();
+    const tools = agentToolCatalog.filter((tool) => (!query.mode || tool.mode === query.mode) && (!normalized || `${tool.name} ${tool.publisher} ${tool.description}`.toLowerCase().includes(normalized))).map((tool) => ({ ...tool, installed: installed.get(tool.id)?.status === "available", detected: installed.get(tool.id)?.status === "available", detectedExecutable: installed.get(tool.id)?.executable ?? null, detectedVersion: installed.get(tool.id)?.version ?? null, latestInstall: jobs.get(tool.id) ?? null }));
+    return { tools, selectedToolId: selected?.value ?? null };
+  });
+  app.get("/api/agent-tools/installations", async (request) => ({ jobs: installer.list(Number((request.query as { limit?: string }).limit ?? 100)) }));
+  app.get<{ Params: { id: string } }>("/api/agent-tools/installations/:id", async (request, reply) => { const row = installer.get(request.params.id); return row ? row : reply.code(404).send({ error: "Installation job not found" }); });
+  app.post<{ Params: { id: string } }>("/api/agent-tools/:id/install", async (request, reply) => { try { return reply.code(202).send(installer.start(request.params.id)); } catch (error) { return reply.code(409).send({ error: error instanceof Error ? error.message : "Unable to start installation" }); } });
+  app.delete<{ Params: { id: string } }>("/api/agent-tools/installations/:id", async (request, reply) => { try { installer.stop(request.params.id); return { ok: true }; } catch (error) { return reply.code(409).send({ error: error instanceof Error ? error.message : "Unable to stop installation" }); } });
+  app.post<{ Params: { id: string } }>("/api/agent-tools/:id/select", async (request, reply) => { const tool = getAgentTool(request.params.id); if (!tool) return reply.code(404).send({ error: "Catalog tool not found" }); const now = db.now(); db.raw.prepare("INSERT INTO settings (key,value,updated_at) VALUES ('selected_agent_tool',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").run(tool.id, now); bus.publish("agent.selected", { toolId: tool.id, name: tool.name }); return { selectedToolId: tool.id }; });
+  app.post<{ Params: { id: string } }>("/api/agent-tools/:id/chat", async (request, reply) => { const tool = getAgentTool(request.params.id); const parsed = z.object({ cwd: z.string().min(1).max(4096), model: z.string().max(256).optional(), message: z.string().max(100000).optional() }).safeParse(bodyOf(request)); if (!tool || tool.mode !== "cli" || !tool.executable) return reply.code(409).send({ error: "This catalog entry is not a directly launchable local CLI" }); if (!parsed.success) return reply.code(400).send({ error: "Invalid chat options", details: parsed.error.flatten() }); try { const session = sessions.create(tool.id, { cwd: parsed.data.cwd, ...(parsed.data.model ? { model: parsed.data.model } : {}) }, actorOf(request)); if (parsed.data.message) sessions.input(String(session.id), `${parsed.data.message}\n`, actorOf(request)); return reply.code(201).send({ tool, session }); } catch (error) { return reply.code(409).send({ error: error instanceof Error ? error.message : "Unable to open agent chat" }); } });
   app.post("/api/agents/detect", async () => ({ agents: await registry.detectAll() }));
   app.get<{ Params: { id: string } }>("/api/agents/:id", async (request, reply) => { const id = idSchema.safeParse(request.params.id); if (!id.success) return reply.code(400).send({ error: "Invalid agent id" }); const result = db.raw.prepare("SELECT * FROM agents WHERE id=?").get(id.data); return result ? result : reply.code(404).send({ error: "Agent not found" }); });
 
@@ -91,14 +109,15 @@ export async function buildApp(options: { dbFile?: string; logger?: boolean } = 
   app.patch<{ Params: { id: string } }>("/api/approvals/:id", async (request, reply) => { const parsed = z.object({ status: z.enum(["approved", "denied"]) }).safeParse(bodyOf(request)); if (!parsed.success) return reply.code(400).send({ error: "Invalid approval status" }); const resolvedAt = db.now(); const result = db.raw.prepare("UPDATE approval_requests SET status=?,resolved_at=? WHERE id=? AND status='pending'").run(parsed.data.status, resolvedAt, request.params.id); if (result.changes === 0) return reply.code(404).send({ error: "Pending approval not found" }); const row = db.raw.prepare("SELECT * FROM approval_requests WHERE id=?").get(request.params.id) as Record<string, unknown> | undefined; if (!row) return reply.code(404).send({ error: "Approval not found" }); bus.publish("security.resolved", row); return row; });
 
   app.get("/api/events", async () => ({ events: db.raw.prepare("SELECT * FROM events ORDER BY created_at DESC LIMIT 100").all() }));
-  app.setErrorHandler((error, _request, reply) => { app.log.error(error); const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500; return reply.code(statusCode).send({ error: "Internal server error" }); });
+  app.setErrorHandler((error, _request, reply) => { app.log.error(error); const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500; const message = statusCode >= 400 && statusCode < 500 && error instanceof Error ? error.message : "Internal server error"; return reply.code(statusCode).send({ error: message }); });
 
   const wss = new WebSocketServer({ noServer: true });
   app.server.on("upgrade", (request, socket, head) => { if (request.url !== "/ws") { socket.destroy(); return; } wss.handleUpgrade(request, socket, head, (ws) => wss.emit("connection", ws)); });
   wss.on("connection", (socket) => { socket.send(JSON.stringify({ type: "system.health", payload: { status: "connected" }, at: db.now() })); });
+  bus.on("agent.install.completed", () => { void registry.detectAll(); });
   bus.on("event", (event) => { db.raw.prepare("INSERT INTO events (id,event_type,payload_json,created_at) VALUES (?,?,?,?)").run(randomUUID(), event.type, JSON.stringify(event.payload), event.at); for (const client of wss.clients) if (client.readyState === 1) client.send(JSON.stringify(event)); });
 
-  return { app, db, bus, registry, sessions, tasks, teams, orchestrator, workflows, terminal };
+  return { app, db, bus, registry, sessions, tasks, teams, orchestrator, workflows, terminal, installer };
 }
 
 const isMain = process.argv[1]?.endsWith("server.ts") || process.argv[1]?.endsWith("server.js");

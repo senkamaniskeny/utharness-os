@@ -13,6 +13,7 @@
     "pack": "pnpm pack"
   },
   "dependencies": {
+    "@lobehub/icons-static-svg": "^1.94.0",
     "@utharness/frontend-client": "workspace:*",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
@@ -22,9 +23,9 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^4.1.11",
-    "eslint": "^9.17.0"
+    "vitest": "^4.1.11"
   }
 }

@@ -4,7 +4,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const TABLES = [
-  "agents", "agent_installations", "agent_capabilities", "sessions", "messages", "events",
+  "agents", "agent_installations", "agent_install_jobs", "agent_capabilities", "sessions", "messages", "events",
   "teams", "team_members", "tasks", "task_dependencies", "mailbox_messages", "workspaces",
   "workflows", "workflow_runs", "memory", "skills", "mcp_servers", "models", "providers",
   "permissions", "approval_requests", "terminal_sessions", "processes", "telemetry", "audit_logs",
@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS agents (
 CREATE TABLE IF NOT EXISTS agent_installations (
   id TEXT PRIMARY KEY, agent_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL,
   version TEXT, detected_at TEXT NOT NULL, FOREIGN KEY(agent_id) REFERENCES agents(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS agent_install_jobs (
+  id TEXT PRIMARY KEY, tool_id TEXT NOT NULL, status TEXT NOT NULL, command_json TEXT NOT NULL,
+  output TEXT NOT NULL DEFAULT '', exit_code INTEGER, error TEXT, created_at TEXT NOT NULL,
+  started_at TEXT, ended_at TEXT
 );
 CREATE TABLE IF NOT EXISTS agent_capabilities (agent_id TEXT NOT NULL, capability TEXT NOT NULL, PRIMARY KEY(agent_id, capability));
 CREATE TABLE IF NOT EXISTS sessions (

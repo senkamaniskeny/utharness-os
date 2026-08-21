@@ -39,7 +39,14 @@ export interface AgentRecord {
   version: string | null;
   status: string;
   capabilities_json: string;
+  metadata_json?: string;
 }
+
+export type AgentToolMode = "cli" | "editor" | "framework" | "service" | "hosted";
+export interface AgentToolInstaller { kind: "npm" | "python" | "manual" | "none"; packageName?: string; executable?: string; note?: string; }
+export interface AgentToolRecord { id: string; name: string; publisher: string; mode: AgentToolMode; description: string; officialUrl: string; docsUrl?: string; repositoryUrl?: string; executable?: string; iconSlug: string; capabilities: string[]; installer: AgentToolInstaller; installed: boolean; detected: boolean; detectedExecutable: string | null; detectedVersion: string | null; latestInstall: InstallJobRecord | null; }
+export interface InstallJobRecord { id: string; tool_id: string; status: "queued" | "running" | "completed" | "failed"; command_json: string; output: string; exit_code: number | null; error: string | null; created_at: string; started_at: string | null; ended_at: string | null; }
+export interface AgentChatResponse { tool: AgentToolRecord; session: SessionRecord; }
 
 export interface SessionRecord {
   id: string;
@@ -115,6 +122,13 @@ export class UtharnessClient {
   system(): Promise<SystemResponse> { return this.request("/api/system"); }
   agents(): Promise<{ agents: AgentRecord[] }> { return this.request("/api/agents"); }
   detectAgents(): Promise<{ agents: Array<AgentRecord & { detected: boolean; source?: string }> }> { return this.request("/api/agents/detect", { method: "POST" }); }
+  agentTools(params: { mode?: AgentToolMode; q?: string } = {}): Promise<{ tools: AgentToolRecord[]; selectedToolId: string | null }> { const query = new URLSearchParams(); if (params.mode) query.set("mode", params.mode); if (params.q) query.set("q", params.q); const suffix = query.toString() ? `?${query.toString()}` : ""; return this.request(`/api/agent-tools${suffix}`); }
+  installAgentTool(id: string): Promise<InstallJobRecord> { return this.request(`/api/agent-tools/${id}/install`, { method: "POST" }); }
+  agentInstallations(): Promise<{ jobs: InstallJobRecord[] }> { return this.request("/api/agent-tools/installations"); }
+  agentInstallation(id: string): Promise<InstallJobRecord> { return this.request(`/api/agent-tools/installations/${id}`); }
+  stopAgentInstallation(id: string): Promise<{ ok: boolean }> { return this.request(`/api/agent-tools/installations/${id}`, { method: "DELETE" }); }
+  selectAgentTool(id: string): Promise<{ selectedToolId: string }> { return this.request(`/api/agent-tools/${id}/select`, { method: "POST" }); }
+  openAgentChat(id: string, cwd: string, model?: string, message?: string): Promise<AgentChatResponse> { return this.request(`/api/agent-tools/${id}/chat`, { method: "POST", body: JSON.stringify({ cwd, ...(model ? { model } : {}), ...(message ? { message } : {}) }) }); }
   sessions(): Promise<{ sessions: SessionRecord[] }> { return this.request("/api/sessions"); }
   createSession(agentId: string, cwd: string, model?: string): Promise<SessionRecord> { return this.request("/api/sessions", { method: "POST", body: JSON.stringify({ agentId, cwd, ...(model ? { model } : {}) }) }); }
   stopSession(id: string): Promise<{ ok: boolean }> { return this.request(`/api/sessions/${id}`, { method: "DELETE" }); }

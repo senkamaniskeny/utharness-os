@@ -86,6 +86,22 @@ describe("UTHARNESS backend", () => {
     expect(resolved.json().status).toBe("approved");
   });
 
+  it("lists official agent tools, persists selection, and rejects unsafe manual installs", async () => {
+    context = await buildApp({ dbFile: ":memory:" });
+    const catalog = await context.app.inject({ method: "GET", url: "/api/agent-tools", remoteAddress: "127.0.0.1" });
+    expect(catalog.statusCode).toBe(200);
+    expect(catalog.json().tools.length).toBeGreaterThanOrEqual(40);
+    expect(catalog.json().tools.find((tool: { id: string }) => tool.id === "codex").officialUrl).toContain("openai");
+    const selected = await context.app.inject({ method: "POST", url: "/api/agent-tools/codex/select", remoteAddress: "127.0.0.1" });
+    expect(selected.statusCode).toBe(200);
+    expect(selected.json().selectedToolId).toBe("codex");
+    const selectedCatalog = await context.app.inject({ method: "GET", url: "/api/agent-tools?q=Codex", remoteAddress: "127.0.0.1" });
+    expect(selectedCatalog.json().selectedToolId).toBe("codex");
+    const manualInstall = await context.app.inject({ method: "POST", url: "/api/agent-tools/hermes/install", remoteAddress: "127.0.0.1" });
+    expect(manualInstall.statusCode).toBe(409);
+    expect(manualInstall.json().error).toContain("manual setup");
+  });
+
   it("rejects non-local requests by default", async () => {
     context = await buildApp({ dbFile: ":memory:" });
     const response = await context.app.inject({ method: "GET", url: "/api/health", remoteAddress: "10.0.0.2" });
