@@ -19,13 +19,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @utharness/cli build
       - run: pnpm --filter @utharness/tui build
-      - name: Publish CLI and TUI packages
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        run: |
-          pnpm --filter @utharness/cli publish --access public --no-git-checks
-          pnpm --filter @utharness/tui publish --access public --no-git-checks
+      - name: Publish packages when a token is configured
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Explain skipped publication
-        if: ${{ secrets.NPM_TOKEN == '' }}
-        run: echo "NPM_TOKEN is not configured; packages were built but not published."
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN is not configured; packages were built but not published."
+            exit 0
+          fi
+          pnpm --filter @utharness/cli publish --access public --no-git-checks
+          pnpm --filter @utharness/tui publish --access public --no-git-checks
