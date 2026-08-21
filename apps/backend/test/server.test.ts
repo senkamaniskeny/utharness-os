@@ -63,6 +63,29 @@ describe("UTHARNESS backend", () => {
     expect(provider.statusCode).toBe(201);
   });
 
+  it("exposes module read contracts and resolves approvals", async () => {
+    context = await buildApp({ dbFile: ":memory:" });
+    const agent = await context.app.inject({ method: "POST", url: "/api/agents/detect", remoteAddress: "127.0.0.1" });
+    expect(agent.statusCode).toBe(200);
+    const teamResponse = await context.app.inject({ method: "POST", url: "/api/teams", payload: { name: "Read Contract Team", goal: "Verify module reads", agentIds: [agent.json().agents[0].id] }, remoteAddress: "127.0.0.1" });
+    const team = teamResponse.json();
+    await context.app.inject({ method: "POST", url: `/api/teams/${team.id}/messages`, payload: { sender: "tester", content: "Mailbox ready" }, remoteAddress: "127.0.0.1" });
+    const members = await context.app.inject({ method: "GET", url: "/api/team-members", remoteAddress: "127.0.0.1" });
+    const messages = await context.app.inject({ method: "GET", url: "/api/team-messages", remoteAddress: "127.0.0.1" });
+    expect(members.statusCode).toBe(200);
+    expect(members.json().members).toHaveLength(1);
+    expect(messages.json().messages[0].content).toBe("Mailbox ready");
+    const workflow = await context.app.inject({ method: "POST", url: "/api/workflows", payload: { name: "Read workflow", steps: [{ id: "manual" }] }, remoteAddress: "127.0.0.1" });
+    await context.app.inject({ method: "POST", url: `/api/workflows/${workflow.json().id}/run`, remoteAddress: "127.0.0.1" });
+    const runs = await context.app.inject({ method: "GET", url: "/api/workflow-runs", remoteAddress: "127.0.0.1" });
+    expect(runs.statusCode).toBe(200);
+    expect(runs.json().runs[0].status).toBe("completed");
+    const approval = await context.app.inject({ method: "POST", url: "/api/approvals", payload: { subject: "local-user", action: "terminal.open", resource: "/tmp" }, remoteAddress: "127.0.0.1" });
+    const resolved = await context.app.inject({ method: "PATCH", url: `/api/approvals/${approval.json().id}`, payload: { status: "approved" }, remoteAddress: "127.0.0.1" });
+    expect(resolved.statusCode).toBe(200);
+    expect(resolved.json().status).toBe("approved");
+  });
+
   it("rejects non-local requests by default", async () => {
     context = await buildApp({ dbFile: ":memory:" });
     const response = await context.app.inject({ method: "GET", url: "/api/health", remoteAddress: "10.0.0.2" });
