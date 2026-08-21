@@ -1,0 +1,26 @@
+name: Publish npm packages
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.21.0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @utharness/cli build
+      - run: pnpm --filter @utharness/tui build
+      - run: pnpm --filter @utharness/cli publish --access public --no-git-checks
+        env: { NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} }
+      - run: pnpm --filter @utharness/tui publish --access public --no-git-checks
+        env: { NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} }
