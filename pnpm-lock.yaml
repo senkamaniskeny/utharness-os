@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  extract-zip@2.0.1: 44b815dfa274d3886e3c8e80b5eb550d1a2b47e901cf4ab1da584ba2d676740f
+  extract-zip@2.0.1: 0079a85914c53e8e577946b7222ed17aa3a707a9ac1a97d1c1fe3d729592e135
 
 importers:
 
@@ -3389,7 +3389,7 @@ snapshots:
     dependencies:
       '@electron/get': 2.0.3(supports-color@7.2.0)
       '@types/node': 22.20.1
-      extract-zip: 2.0.1(patch_hash=44b815dfa274d3886e3c8e80b5eb550d1a2b47e901cf4ab1da584ba2d676740f)(supports-color@7.2.0)
+      extract-zip: 2.0.1(patch_hash=0079a85914c53e8e577946b7222ed17aa3a707a9ac1a97d1c1fe3d729592e135)(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -3548,7 +3548,7 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  extract-zip@2.0.1(patch_hash=44b815dfa274d3886e3c8e80b5eb550d1a2b47e901cf4ab1da584ba2d676740f)(supports-color@7.2.0):
+  extract-zip@2.0.1(patch_hash=0079a85914c53e8e577946b7222ed17aa3a707a9ac1a97d1c1fe3d729592e135)(supports-color@7.2.0):
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
       get-stream: 5.2.0

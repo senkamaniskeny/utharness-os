@@ -1,0 +1,56 @@
+{
+  "design_system": {
+    "palette": {
+      "foundation": "#06150f",
+      "shell": "#0b1f18",
+      "panel": "rgba(13, 39, 29, 0.72)",
+      "panelRaised": "rgba(17, 55, 39, 0.72)",
+      "panelRecessed": "rgba(2, 15, 10, 0.78)",
+      "deepGreen": "#006400",
+      "systemGreen": "#007200",
+      "primaryGreen": "#008000",
+      "fern": "#38b000",
+      "radioactive": "#70e000",
+      "slime": "#9ef01a",
+      "chartreuse": "#ccff33",
+      "sky": "#7dd3fc",
+      "amber": "#f6b73c",
+      "error": "#fb7185",
+      "text": "#edf8f0",
+      "muted": "#9bb2a5",
+      "hairline": "rgba(190, 255, 209, 0.14)"
+    },
+    "typography": {
+      "display": "Corpta, Manrope, sans-serif",
+      "ui": "Goodly, Manrope, sans-serif",
+      "body": "Richgold, Manrope, sans-serif",
+      "telemetry": "JetBrains Mono, SFMono-Regular, monospace",
+      "scale": { "display": "clamp(2.4rem, 5vw, 4.5rem)", "h2": "clamp(2rem, 3.5vw, 3rem)", "body": "clamp(.95rem, 1vw, 1rem)" }
+    },
+    "spacing": { "unit": 4, "card": 24, "section": 32, "controlGap": 8 },
+    "shape": { "cardRadius": 24, "controlRadius": 14, "pillRadius": 999 },
+    "elevation": { "glassBlur": 20, "raised": "10px 14px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.09)", "pressed": "inset 5px 5px 12px rgba(0,0,0,.34), inset -3px -3px 8px rgba(255,255,255,.05)" },
+    "motion": { "micro": 140, "control": 180, "panel": 240, "ambient": 9000, "reducedMotion": true }
+  },
+  "design_style": {
+    "mood": "alive local AI command center",
+    "fusion": ["Apple Liquid Glass", "3D HUD telemetry", "pressed neumorphism"],
+    "composition": "persistent holographic sidebar, compact top bar, bento telemetry grid, optional inspectors, bottom status dock",
+    "density": "progressive; preserve current task, agent state, primary actions, errors, and progress before secondary telemetry",
+    "voice": "precise, calm, technical, local-first",
+    "interactionFeel": "tactile, intentional, low-frequency ambient motion"
+  },
+  "visual_effects": {
+    "glass": { "enabled": true, "backdropBlur": "blur(20px) saturate(145%)", "maxStrongLayers": 3 },
+    "hud": { "enabled": true, "grid": true, "rings": true, "segmentedMeters": true, "glow": "controlled" },
+    "threeDIcons": { "enabled": true, "rendering": "CSS 3D layered surfaces with Lucide glyph cores", "style": "front-facing rounded optical glass + polished metal + green rim", "states": ["neutral", "active", "running", "warning", "error", "disabled"], "sizes": [18, 24, 32, 48, 72] },
+    "background": { "base": "deep green field", "layers": ["soft radial green", "faint perspective grid", "slow ambient reflection"], "avoid": ["high-frequency particles", "high-contrast patterns behind text"] },
+    "reducedMotion": "disable ambient transforms and keep state changes opacity-only"
+  },
+  "informationArchitecture": {
+    "shell": ["sidebar", "topbar", "mainWorkspace", "rightInspector", "bottomTelemetry"],
+    "modules": ["Overview", "Agents", "Sessions", "Tasks", "Teams", "Workflows", "Memory", "MCP", "Models", "Permissions", "Terminal", "Audit"],
+    "keyboard": { "commandPalette": "Ctrl+K", "closeOverlay": "Escape" },
+    "responsive": { "desktop": "sidebar + multi-column + telemetry", "tablet": "collapsible sidebar + two columns", "mobile": "single column + bottom navigation + reduced blur" }
+  }
+}

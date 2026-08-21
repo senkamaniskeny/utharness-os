@@ -1,16 +1,16 @@
 diff --git a/index.js b/index.js
-index 23384ea16bb848616886f356d8d69f94325535bf..16135c72bc939be139bc586b68339e706596a815 100644
+index 23384ea16bb848616886f356d8d69f94325535bf..51ba4af51d075d0e4cfe9d38e57ab0f55ed47686 100644
 --- a/index.js
 +++ b/index.js
-@@ -125,9 +125,8 @@ class Extractor {
-     const readStream = await promisify(this.zipfile.openReadStream.bind(this.zipfile))(entry)
+@@ -126,6 +126,11 @@ class Extractor {
  
      if (symlink) {
--      const link = await getStream(readStream)
--      debug('creating symlink', link, dest)
--      await fs.symlink(link, dest)
-+      readStream.destroy()
-+      throw new Error(`Symbolic-link archive entry is not permitted: ${entry.fileName}`)
+       const link = await getStream(readStream)
++      const target = path.resolve(path.dirname(dest), link)
++      const relativeTarget = path.relative(this.opts.dir, target)
++      if (relativeTarget.split(path.sep).includes('..') || path.isAbsolute(relativeTarget)) {
++        throw new Error(`Out of bound symlink target "${link}" found while processing file ${entry.fileName}`)
++      }
+       debug('creating symlink', link, dest)
+       await fs.symlink(link, dest)
      } else {
-       await pipeline(readStream, createWriteStream(dest, { mode: procMode }))
-     }
