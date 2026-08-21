@@ -6,7 +6,7 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "pnpm --filter @utharness/web dev & electron .",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp src/preload.cjs dist/preload.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint src --max-warnings=0",
