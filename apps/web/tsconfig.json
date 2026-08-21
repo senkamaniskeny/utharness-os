@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": { "@utharness/frontend-client": ["../../packages/frontend-client/src/index.ts"] },
+    "jsx": "react-jsx",
+    "rootDir": "../..",
+    "outDir": "dist",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["src", "../../packages/frontend-client/src"]
+}
