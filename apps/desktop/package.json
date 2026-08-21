@@ -1,0 +1,27 @@
+{
+  "name": "@utharness/desktop",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "pnpm --filter @utharness/web dev & electron .",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src --max-warnings=0",
+    "start": "electron .",
+    "pack": "pnpm pack"
+  },
+  "dependencies": {
+    "@utharness/frontend-client": "workspace:*",
+    "@utharness/web": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^39.8.10",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11",
+    "eslint": "^9.17.0"
+  }
+}
