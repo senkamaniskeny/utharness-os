@@ -1,18 +1,16 @@
 name: Publish npm packages
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 11.21.0 }
+        with:
+          version: 11.21.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -21,9 +19,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @utharness/cli build
       - run: pnpm --filter @utharness/tui build
-      - run: pnpm --filter @utharness/cli publish --access public --no-git-checks
-        if: ${{ env.NPM_TOKEN != '' }}
-        env: { NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }} }
-      - run: pnpm --filter @utharness/tui publish --access public --no-git-checks
-        if: ${{ env.NPM_TOKEN != '' }}
-        env: { NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }} }
+      - name: Publish CLI and TUI packages
+        if: ${{ secrets.NPM_TOKEN != '' }}
+        run: |
+          pnpm --filter @utharness/cli publish --access public --no-git-checks
+          pnpm --filter @utharness/tui publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Explain skipped publication
+        if: ${{ secrets.NPM_TOKEN == '' }}
+        run: echo "NPM_TOKEN is not configured; packages were built but not published."
