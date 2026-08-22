@@ -27,7 +27,7 @@ pnpm web
 pnpm desktop
 ```
 
-Frontend architecture and runtime configuration are documented in [docs/FRONTEND.md](docs/FRONTEND.md).
+Frontend architecture and runtime configuration are documented in [docs/FRONTEND.md](docs/FRONTEND.md). The complete operator walkthrough is available in [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
 ## Installation
 
@@ -148,6 +148,59 @@ The default posture is local-only access, strict request validation, rate limiti
 | `integrations/*`           | Adapter-specific integration slots                                                 |
 | `migrations`               | Human-readable migration notes and future migration assets                         |
 | `.github/workflows`        | CI, security, release, and publishing automation                                   |
+
+## Architecture overview
+
+UTHARNESS OS is organized as a backend-first monorepo. The backend owns durable state and process authority; every client is a projection or command surface over the REST and WebSocket contracts. This boundary keeps browser state disposable and makes the local SQLite database the source of truth for sessions, agents, tasks, teams, workflows, permissions, approvals, memory, telemetry, and audit records.
+
+```mermaid
+flowchart LR
+  UI[React/Vite dashboard] -->|REST commands and reads| API[Fastify backend]
+  UI -->|WebSocket telemetry| BUS[Event bus]
+  DESKTOP[Electron wrapper] --> UI
+  CLI[CLI and TUI] -->|HTTP contracts| API
+  API --> DB[(SQLite + Drizzle)]
+  API --> REG[Agent registry]
+  REG --> ADAPTERS[Catalog-derived adapters]
+  ADAPTERS --> PTY[node-pty sessions]
+  API --> BUS
+  BUS --> DB
+  API --> ORCH[Teams and workflow orchestration]
+  ORCH --> DB
+```
+
+| Layer                          | Location                                                                 | Responsibility                                                                                                | Contribution boundary                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP and event contract        | `apps/backend/src/server.ts`                                             | Fastify routes, validation, CORS, rate limiting, WebSocket upgrade, and event fan-out                         | Add or change a route only with validation, persistence, an event decision, and integration coverage.                                 |
+| Persistence                    | `apps/backend/src/database.ts`                                           | SQLite connection, WAL mode, schema bootstrap, migrations, and typed resource access                          | Keep durable state in SQLite; do not make a browser store or event stream authoritative.                                              |
+| Runtime authority              | `apps/backend/src/runtime.ts` and `apps/backend/src/terminal.ts`         | Agent discovery, permissions, sessions, PTY/child-process fallback, terminal lifecycle, and event publication | Treat process launch and input as privileged operations; preserve permission and audit checks.                                        |
+| Agent catalog and installation | `apps/backend/src/agent-tools.ts`, `agents.ts`, and `agent-installer.ts` | Official tool metadata, adapter detection, allowlisted npm/Python installation, and durable installer jobs    | Extend the catalog with official source metadata and explicit installer policy; never accept arbitrary install commands from clients. |
+| Orchestration                  | `apps/backend/src/orchestration.ts`                                      | Teams, mailbox messages, task coordination, and workflow DAG execution                                        | Persist state transitions and publish observable events for long-running operations.                                                  |
+| Browser client                 | `packages/frontend-client`                                               | Typed REST helpers and reconnecting WebSocket event stream                                                    | Keep browser-facing contract types aligned with backend responses and avoid server-only dependencies.                                 |
+| Operations dashboard           | `apps/web`                                                               | React module surfaces, Liquid Glass/HUD design system, selectors, forms, and telemetry presentation           | Use shared design tokens and handle loading, empty, error, responsive, and reconnect states.                                          |
+| Desktop shell                  | `apps/desktop`                                                           | Hardened Electron `BrowserWindow`, preload bridge, and renderer loading                                       | Keep `contextIsolation`, sandboxing, and disabled Node integration enabled; expose only deliberate capabilities.                      |
+| CLI and TUI                    | `apps/cli`, `apps/tui`                                                   | Terminal diagnostics, discovery, and setup surfaces over local contracts                                      | Prefer existing API contracts instead of duplicating backend business logic.                                                          |
+
+### Runtime data flow
+
+A mutating user action starts in the dashboard, CLI, TUI, or desktop renderer and reaches a validated Fastify route. The route delegates to a backend service, writes the authoritative result to SQLite, and publishes a typed event when the operation is observable. WebSocket clients receive the event for immediate telemetry, while the client refreshes REST state for durable truth. This means a reconnect, browser refresh, or second client converges on the same local database state.
+
+Agent sessions follow a stricter path. The catalog identifies a registered executable, the registry verifies detection, the session manager applies permissions and environment rules, and the PTY manager launches the process. Session output is published as events and persisted where the relevant domain requires it. A client must not bypass the registry by sending an arbitrary executable path to a session route.
+
+### Contributor workflow
+
+Start by identifying the contract-owning backend module and the client surface that consumes it. For a new domain operation, add the validated route, persistence behavior, event behavior, and backend integration test before wiring the React interaction. For a UI change, cover loading, empty, error, success, and narrow viewport states, then run the browser smoke checks when the interaction touches the live dashboard. Keep security-sensitive changes local-first by default and update [SECURITY.md](SECURITY.md) when the trust boundary changes.
+
+Before opening a pull request, run the repository checks from the root:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm lint
+pnpm build
+```
+
+The CI matrix also runs a fresh-runner installation smoke test that installs the frozen lockfile, builds the workspace, starts the backend against a temporary SQLite database, checks `/api/health`, and exercises the CLI against that newly started backend. The workflow is in [.github/workflows/install-smoke.yml](.github/workflows/install-smoke.yml), and its portable runner logic is in [scripts/ci-install-smoke.mjs](scripts/ci-install-smoke.mjs).
 
 ## License
 
