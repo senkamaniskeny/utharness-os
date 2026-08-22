@@ -11,8 +11,9 @@ function createWindow(): void {
     height: 920,
     minWidth: 980,
     minHeight: 680,
-    backgroundColor: "#0b0f14",
+    backgroundColor: "#06150f",
     title: "UTHARNESS OS",
+    icon: join(__dirname, "../assets/utharness-app-icon.png"),
     webPreferences: {
       preload: join(__dirname, "preload.cjs"),
       contextIsolation: true,
