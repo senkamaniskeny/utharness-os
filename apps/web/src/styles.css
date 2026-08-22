@@ -1,8 +1,14 @@
-@import url("https://fonts.cdnfonts.com/css/corpta");
-@import url("https://fonts.cdnfonts.com/css/goodly");
-@import url("https://fonts.cdnfonts.com/css/richgold");
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap");
 
+/* Manrope and JetBrains Mono are vendored under the SIL Open Font License 1.1. */
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/manrope-400.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/manrope-500.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/manrope-600.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/manrope-700.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 800; font-display: swap; src: url("/fonts/manrope-800.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/jetbrains-mono-400.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/jetbrains-mono-500.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/jetbrains-mono-600.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/jetbrains-mono-700.woff2") format("woff2"); }
 :root { color-scheme: dark; font-family: "Richgold", "Manrope", sans-serif; font-synthesis: none; --foundation: #06150f; --shell: #0b1f18; --shell-2: #0e2a1e; --panel: rgba(13, 39, 29, .72); --panel-solid: #102a20; --recessed: rgba(2, 15, 10, .78); --text: #edf8f0; --muted: #9bb2a5; --muted-2: #6f897b; --line: rgba(190, 255, 209, .14); --line-strong: rgba(158, 240, 26, .32); --green: #008000; --fern: #38b000; --live: #70e000; --slime: #9ef01a; --lime: #ccff33; --sky: #7dd3fc; --amber: #f6b73c; --error: #fb7185; --radius-card: 24px; --radius-control: 14px; --glass: blur(20px) saturate(145%); --raised: 10px 14px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.09); --pressed: inset 5px 5px 12px rgba(0,0,0,.34), inset -3px -3px 8px rgba(255,255,255,.05); --ease-out: cubic-bezier(.23,1,.32,1); }
 :root[data-theme="light"] { color-scheme: light; --foundation: #dbe9df; --shell: #e8f2e9; --shell-2: #f4fbf3; --panel: rgba(251, 255, 251, .72); --panel-solid: #f2f9f1; --recessed: rgba(210, 229, 214, .78); --text: #10241a; --muted: #5c7566; --muted-2: #789083; --line: rgba(20, 76, 40, .15); --line-strong: rgba(0, 114, 0, .34); --raised: 10px 14px 30px rgba(52, 92, 62, .16), inset 0 1px 0 rgba(255,255,255,.9); --pressed: inset 5px 5px 12px rgba(66, 113, 78, .2), inset -3px -3px 8px rgba(255,255,255,.85); }
 * { box-sizing: border-box; }
