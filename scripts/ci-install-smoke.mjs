@@ -26,6 +26,7 @@ function run(command, args, options = {}) {
       env,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      shell: process.platform === "win32",
       ...options,
     });
     let stdout = "";
@@ -73,6 +74,7 @@ try {
     env,
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
+    shell: process.platform === "win32",
     detached: process.platform !== "win32",
   });
   server.stdout?.on("data", (chunk) => {
