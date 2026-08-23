@@ -5,7 +5,9 @@
   "description": "Local-first multi-agent operating environment",
   "license": "MIT",
   "packageManager": "pnpm@11.21.0",
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "pnpm --filter @utharness/backend dev",
     "backend": "pnpm --filter @utharness/backend dev",
@@ -20,6 +22,7 @@
     "package": "pnpm -r pack",
     "e2e:live": "node scripts/e2e-live-simulation.mjs",
     "branding:verify": "node scripts/verify-branding-assets.mjs",
+    "install:docs:verify": "node scripts/verify-install-docs.mjs",
     "format": "prettier --write ."
   },
   "devDependencies": {
@@ -32,4 +35,3 @@
     "vitest": "^4.1.11"
   }
 }
-

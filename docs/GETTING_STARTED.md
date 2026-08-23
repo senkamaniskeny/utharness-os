@@ -19,7 +19,7 @@ Install the following before cloning the repository. The workspace declares Node
 | Git              | A recent release               | `git --version`  |
 | Operating system | Linux, macOS, or Windows       | —                |
 
-If pnpm is not installed, enable the version managed by Corepack where available, or install pnpm using the official instructions. Verify both Node.js and pnpm before continuing.
+If pnpm is not installed, enable the version managed by Corepack where available, or install pnpm using the official instructions. Verify both Node.js and pnpm before continuing. The complete command-by-command matrix for npm, npx, pnpm, pnpx, Yarn, Bun, bunx, Deno, uv, uvx, pip, pipx, Python, Cargo, Homebrew, apt, Nix, Volta, mise, fnm, nvm, Corepack, Rush, Lerna, cnpm, curl, and Git is available in [Installation methods](INSTALL_METHODS.md).
 
 ## Install from source
 
