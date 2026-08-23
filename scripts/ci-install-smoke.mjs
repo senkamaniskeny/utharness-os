@@ -1,15 +1,17 @@
+import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 
 const root = process.cwd();
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const port = Number(process.env.UTHARNESS_SMOKE_PORT ?? 4317);
 const baseUrl = `http://127.0.0.1:${port}`;
-const database = join(
-  tmpdir(),
-  `utharness-install-smoke-${process.pid}.sqlite`,
-);
+const runId = `${process.pid}-${Date.now()}`;
+const database = join(tmpdir(), `utharness-install-smoke-${runId}.sqlite`);
+const packDirectory = join(tmpdir(), `utharness-cli-pack-${runId}`);
+const installPrefix = join(tmpdir(), `utharness-cli-prefix-${runId}`);
 const env = {
   ...process.env,
   UTHARNESS_DB: database,
@@ -66,9 +68,20 @@ async function waitForHealth(url, timeoutMs = 30000) {
   throw new Error(`Timed out waiting for ${url}/api/health: ${lastError}`);
 }
 
+function installedExecutable() {
+  const bin =
+    process.platform === "win32" ? installPrefix : join(installPrefix, "bin");
+  return join(
+    bin,
+    process.platform === "win32" ? "utharness-os.cmd" : "utharness-os",
+  );
+}
+
 let server;
 let serverOutput = "";
 try {
+  mkdirSync(packDirectory, { recursive: true });
+  mkdirSync(installPrefix, { recursive: true });
   server = spawn(pnpm, ["backend"], {
     cwd: root,
     env,
@@ -97,8 +110,50 @@ try {
   if (!Array.isArray(agentTools.tools) || agentTools.tools.length < 1)
     throw new Error("Agent catalog did not return tools");
 
-  await run(pnpm, ["cli", "doctor"]);
-  await run(pnpm, ["cli", "agents", "scan"]);
+  await run(pnpm, [
+    "--filter",
+    "@utharness/cli",
+    "pack",
+    "--pack-destination",
+    packDirectory,
+  ]);
+  const tarballName = readdirSync(packDirectory).find((name) =>
+    name.endsWith(".tgz"),
+  );
+  if (!tarballName) throw new Error("CLI pack did not produce an npm tarball");
+  const tarball = join(packDirectory, tarballName);
+  await run(npm, ["install", "--global", "--prefix", installPrefix, tarball]);
+
+  const executable = installedExecutable();
+  const installedBin =
+    process.platform === "win32" ? installPrefix : join(installPrefix, "bin");
+  const pathKey = process.platform === "win32" ? "Path" : "PATH";
+  const inheritedPath = process.env.PATH ?? process.env.Path ?? "";
+  const installedEnv = {
+    ...env,
+    [pathKey]: `${installedBin}${delimiter}${inheritedPath}`,
+  };
+  if (process.platform === "win32" && "PATH" in installedEnv)
+    delete installedEnv.PATH;
+  const installedRun = (args) =>
+    run(executable, args, { cwd: tmpdir(), env: installedEnv });
+  for (const args of [
+    ["--help"],
+    ["--version"],
+    [],
+    ["config"],
+    ["doctor"],
+    ["status"],
+    ["agents"],
+    ["agents", "scan"],
+    ["tasks"],
+    ["team"],
+    ["models"],
+    ["mcp"],
+    ["workflows"],
+  ]) {
+    await installedRun(args);
+  }
 
   console.log(
     JSON.stringify(
@@ -109,7 +164,8 @@ try {
         backend: baseUrl,
         health: health.status,
         catalogTools: agentTools.tools.length,
-        cli: "doctor and agents scan passed",
+        cli: "packed, installed, and exercised outside the repository",
+        executable,
       },
       null,
       2,
@@ -149,4 +205,9 @@ try {
       }
     }
   }
+  rmSync(packDirectory, { recursive: true, force: true });
+  rmSync(installPrefix, { recursive: true, force: true });
+  rmSync(database, { force: true });
+  rmSync(`${database}-wal`, { force: true });
+  rmSync(`${database}-shm`, { force: true });
 }
