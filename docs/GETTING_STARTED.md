@@ -103,11 +103,40 @@ The backend is authoritative for these records. The dashboard refreshes REST dat
 The workspace CLI uses the same local backend contracts as the dashboard. With the backend running, these commands provide quick diagnostics and discovery:
 
 ```bash
+pnpm cli --help
+pnpm cli --version
 pnpm cli doctor
+pnpm cli status
+pnpm cli config
 pnpm cli agents
 pnpm cli agents scan
 pnpm cli tasks
+pnpm cli team
+pnpm cli models
+pnpm cli mcp
+pnpm cli workflows
 ```
+
+To exercise the actual installable executable outside the workspace, build and pack the CLI, then install the generated tarball into a global npm prefix:
+
+```bash
+pnpm build
+mkdir -p artifacts
+pnpm --filter @utharness/cli pack --pack-destination artifacts
+npm install --global ./artifacts/utharness-cli-0.1.0.tgz
+utharness-os --help
+utharness-os --version
+utharness-os status
+```
+
+The package exposes both `utharness-os` and the shorter `utharness` command names. The installed executable uses the same `UTHARNESS_URL` backend target as the workspace command:
+
+```bash
+UTHARNESS_URL=http://127.0.0.1:4317 utharness-os doctor
+UTHARNESS_URL=http://127.0.0.1:4317 utharness-os agents scan
+```
+
+On PowerShell, set the variable for the current shell with `$env:UTHARNESS_URL = "http://127.0.0.1:4317"` before running the command. The `config` command reports backend, WebSocket, database, and runtime settings but deliberately omits secret values.
 
 The interactive setup and diagnostics surface is available with:
 

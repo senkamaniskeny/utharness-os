@@ -83,10 +83,28 @@ After the dashboard opens, select **Agents** in the sidebar and choose **Detect 
 The CLI and setup TUI can be used without the web shell:
 
 ```bash
+pnpm cli --help
+pnpm cli --version
 pnpm cli doctor
+pnpm cli status
+pnpm cli config
 pnpm cli agents scan
 pnpm tui
 ```
+
+To install and verify the actual CLI executable outside the development tree, build and pack the CLI, then install its tarball globally:
+
+```bash
+mkdir -p artifacts
+pnpm build
+pnpm --filter @utharness/cli pack --pack-destination artifacts
+npm install --global ./artifacts/utharness-cli-0.1.0.tgz
+utharness-os --help
+utharness-os --version
+utharness-os status
+```
+
+The package provides both `utharness-os` and `utharness` command names. Set `UTHARNESS_URL` when the backend runs on a non-default local port; `utharness-os config` prints non-secret runtime settings for troubleshooting.
 
 Run the repository validation suite before making changes or packaging a local build:
 
@@ -139,7 +157,7 @@ The default posture is local-only access, strict request validation, rate limiti
 | Area                       | Purpose                                                                            |
 | -------------------------- | ---------------------------------------------------------------------------------- |
 | `apps/backend`             | Fastify REST/WebSocket server and domain services                                  |
-| `apps/cli`                 | `utharness` command-line client                                                    |
+| `apps/cli`                 | `utharness-os` / `utharness` command-line client                                   |
 | `apps/tui`                 | Interactive setup and diagnostics surface                                          |
 | `apps/web`                 | React/Vite operations dashboard connected to REST and WebSocket contracts          |
 | `apps/desktop`             | Electron wrapper with isolated renderer and preload bridge                         |
