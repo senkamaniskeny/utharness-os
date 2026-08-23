@@ -125,10 +125,16 @@ try {
   await run(npm, ["install", "--global", "--prefix", installPrefix, tarball]);
 
   const executable = installedExecutable();
+  const installedBin =
+    process.platform === "win32" ? installPrefix : join(installPrefix, "bin");
+  const pathKey = process.platform === "win32" ? "Path" : "PATH";
+  const inheritedPath = process.env.PATH ?? process.env.Path ?? "";
   const installedEnv = {
     ...env,
-    PATH: `${process.platform === "win32" ? installPrefix : join(installPrefix, "bin")}${delimiter}${env.PATH ?? ""}`,
+    [pathKey]: `${installedBin}${delimiter}${inheritedPath}`,
   };
+  if (process.platform === "win32" && "PATH" in installedEnv)
+    delete installedEnv.PATH;
   const installedRun = (args) =>
     run(executable, args, { cwd: tmpdir(), env: installedEnv });
   for (const args of [
