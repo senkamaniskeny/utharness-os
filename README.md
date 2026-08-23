@@ -31,7 +31,7 @@ Frontend architecture and runtime configuration are documented in [docs/FRONTEND
 
 ## Installation
 
-UTHARNESS OS is currently installed from source. It is designed for a local operator, so no cloud account or hosted service is required for the default workflow.
+UTHARNESS OS is currently installed from source. It is designed for a local operator, so no cloud account or hosted service is required for the default workflow. For a detailed matrix covering npm, npx, pnpm, pnpx, Yarn, Bun, bunx, Deno, uv, uvx, pip, pipx, Python, Cargo, Homebrew, apt, Nix, Volta, mise, fnm, nvm, Corepack, Rush, Lerna, cnpm, curl, and Git, read [Installation methods](docs/INSTALL_METHODS.md).
 
 | Requirement      | Supported baseline                                                                | Check            |
 | ---------------- | --------------------------------------------------------------------------------- | ---------------- |
